@@ -1,16 +1,37 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
+import { CloudWatchStack } from './nested-stacks/cloudwatch-stack';
+import { LambdaStack } from './nested-stacks/lambda-stack';
+import { SnsStack } from './nested-stacks/sns-stack';
 
 export class MainStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
+    const envName = this.node.tryGetContext("env-name");
+    const appName = this.node.tryGetContext("app-name");
+    const emails = (this.node.tryGetContext("emails") as string)
+      .split(",")
+      .map(email => email.trim());
 
-    // example resource
-    // const queue = new sqs.Queue(this, 'MainQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+    const lambdaStack = new LambdaStack(this, "lambda-stack", {
+      envName,
+      appName,
+      description: "Creates a sample function that produces a CustomError."
+    });
+
+    const snsStack = new SnsStack(this, "sns-stack", {
+      envName,
+      appName,
+      emails,
+      description: "Creates an SNS Topic to send received messages to e-mail recipients."
+    });
+
+    const cloudwatchStack = new CloudWatchStack(this, "cloudwatch-stack", {
+      envName,
+      appName,
+      sampleFunction: lambdaStack.getSampleFunction(),
+      alarmTopic: snsStack.getAlarmTopic()
+    });
   }
 }
