@@ -31,7 +31,8 @@ export class MainStack extends cdk.Stack {
       envName,
       appName,
       sampleFunction: lambdaStack.getSampleFunction(),
-      alarmTopic: snsStack.getAlarmTopic()
+      alarmTopic: snsStack.getAlarmTopic(),
+      description: "Creates CloudWatch metric filter and alarm and associates the SNS topic with the alarm."
     });
   }
 }
